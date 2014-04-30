@@ -1,0 +1,233 @@
+<head><title>Tera 24h Clock (alpha 0.7.1)</title>
+<script>
+// data from enmasse(c) welcome window
+var nexusUTC = [
+[2, 9, 19],
+[2, 19],
+[2],
+[2],
+[],
+[2, 19],
+[2, 9, 19]
+];
+var alliancePVP = [
+[0, 1, 2, 3, 4, 5, 11, 12, 15, 16, 22, 23],
+[0, 1, 2, 3, 4, 5, 11, 12, 15, 16, 22, 23],
+[0, 4, 5, 11, 12, 15, 16, 19, 20, 22, 23],
+[0, 4, 5, 11, 12, 15, 16, 19, 20, 22, 23],
+[0, 1, 2, 3, 4, 5, 11, 12, 15, 16, 19, 20, 22, 23],
+[0, 4, 5, 11, 12, 15, 16, 22, 23],
+[0, 4, 5, 11, 12, 15, 16, 22, 23]
+];
+var alliancePVE = [
+[0, 3, 4, 11, 12, 14, 15, 18, 22, 23],
+[0, 1, 3, 4, 11, 12, 14, 15, 18, 19, 22, 23],
+[0, 3, 4, 11, 12, 14, 15, 18, 19, 22, 23],
+[0, 3, 4, 11, 12, 14, 15, 18, 19, 22, 23],
+[0, 3, 4, 11, 12, 14, 15, 18, 19, 22, 23],
+[0, 3, 4, 11, 12, 14, 15, 18, 22, 23],
+[0, 3, 4, 11, 12, 14, 15, 18, 22, 23]
+];
+//end of data;
+addEventListener('load',function(){
+	document.body.style.cssText="background-color:#fff;margin:0;padding:0;";
+	
+	
+	g_canv = document.createElement("canvas");
+	g_cont = g_canv.getContext('2d');
+	g_canv.width = CLOCK_WIDTH;
+	g_canv.height = CLOCK_HEIGHT;
+	document.body.appendChild(g_canv);
+	
+	grd_nexus = g_cont.createRadialGradient(CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, 30, CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, CLOCK_WIDTH / 2);;
+	grd_nexus.addColorStop(.0, 'rgba(0,0,0,0)');
+	grd_nexus.addColorStop(.3, '#000');   
+	
+	create_clock();
+	setInterval(clock_tick,50);
+});
+var g_canv,g_cont;
+
+var CLOCK_WIDTH = 600,
+	CLOCK_HEIGHT = 600;
+var g_date;
+var grd_nexus;
+function create_clock() {
+	
+	//outer/global circle
+	g_cont.lineWidth =1;
+	g_cont.strokeStyle = "#000";
+	g_cont.beginPath();
+	g_cont.arc(CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, CLOCK_WIDTH * .45,0, 2 * Math.PI, false);
+	g_cont.fillStyle = '#fafafa';
+	//g_cont.fill();
+	//g_cont.stroke();
+	
+	//center circle
+	g_cont.beginPath();	
+	g_cont.arc(CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, 15,0, 2 * Math.PI, false);
+	g_cont.stroke();
+	
+	//hours(mark)
+	/*
+	var r1 = CLOCK_HEIGHT / 2.21,
+		r2 = r1 - 10;
+	g_cont.lineJoin = 'round';
+	for(var i=0,x,y,a;i<12;i+=1) {
+		g_cont.beginPath();
+		a = Math.PI / 6 * (i);
+		x = CLOCK_WIDTH / 2  + r1 * Math.cos(a);
+		y = CLOCK_HEIGHT / 2 + r1 * Math.sin(a);
+		g_cont.moveTo(x, y);
+		x = CLOCK_WIDTH / 2  + r2 * Math.cos(a);
+		y = CLOCK_HEIGHT / 2 + r2 * Math.sin(a);
+		g_cont.lineTo(x, y);
+		g_cont.stroke();
+	}*/
+	
+	g_date = new Date();
+	//mark_hours(nexusUTC[g_date.getUTCDay()], CLOCK_WIDTH * .25, 30);
+	//mark_hours(alliancePVE[g_date.getUTCDay()], CLOCK_WIDTH * .26, CLOCK_WIDTH * .4);
+	
+	//create_spiral();
+	for(var i=0;i<nexusUTC.length;i++) {	
+		mark_spiral_hour(nexusUTC[g_date.getUTCDay()][i] - Math.round(g_date.getTimezoneOffset()/60),'nexus');
+	}
+	for(var i=0;i<alliancePVE.length;i++) {	
+		mark_spiral_hour(alliancePVE[g_date.getUTCDay()][i] - Math.round(g_date.getTimezoneOffset()/60),'pvp');
+	}
+	
+	//draw_spiral_arrow_hour();
+	/*
+	g_cont.beginPath();
+	g_cont.moveTo(99, 150);
+	g_cont.lineTo(149, 50);
+	g_cont.lineTo(199, 150);
+	g_cont.lineJoin = 'miter';
+	g_cont.stroke();*/
+}
+function get_spiral_coord(_angle,_radius_offset) {
+	var a = (450 + _angle) * Math.PI / 180,
+		_r = CLOCK_WIDTH/50;
+	return {
+		x: CLOCK_WIDTH  / 2 + _r * (a + _radius_offset) * (Math.cos(a-Math.PI) ),
+		y: CLOCK_HEIGHT / 2 + _r * (a + _radius_offset) * (Math.sin(a-Math.PI) )
+	};
+}
+function draw_spiral_arrow_hour() {
+	g_cont.lineWidth =1;
+	g_cont.strokeStyle = "#ccc";
+	g_cont.fillStyle = "rgba(255,255,255,.7)";
+	g_cont.beginPath();
+	//g_cont.moveTo(CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2);
+	var date = new Date();
+	var coord;
+	var hmins = (date.getHours()  + date.getMinutes()/60 ) * 30 - 360;
+
+
+	for(var i=hmins;i<=hmins+360;i+=5) {
+		coord = get_spiral_coord(  i , Math.PI);
+		if(i==hmins) {
+			g_cont.moveTo(coord.x,coord.y);
+		}
+		g_cont.lineTo(coord.x,coord.y);
+	}
+	//g_cont.lineTo(coord.x,coord.y);
+	//g_cont.lineJoin = 'miter';
+	g_cont.closePath();
+	g_cont.stroke();
+	g_cont.fill();
+	
+	
+}
+function draw_spiral_arrow_second() {
+
+	g_cont.lineWidth =1;
+
+	//g_cont.fillStyle = "rgba(255,255,255,.7)";
+	g_cont.beginPath();
+	var date = new Date();
+	var coord;
+	var angle = (date.getSeconds()  + date.getMilliseconds()/1000  ) * 6;
+	var ang_hours = (date.getHours()  + date.getMinutes()/60 ) * 30;
+	if(ang_hours >= 360) {
+		angle += 360;
+	}
+	if(angle >= ang_hours) {
+		angle -= 360;
+	}
+	
+	coord = {
+			x:CLOCK_WIDTH  / 2 + 15*Math.cos(Math.PI*(angle / 180-.5)),
+			y:CLOCK_HEIGHT / 2 + 15*Math.sin(Math.PI*(angle / 180-.5))};
+	g_cont.moveTo(coord.x,coord.y);
+	coord = get_spiral_coord(  angle , Math.PI);
+	g_cont.lineTo(coord.x,coord.y);
+	/*var r2 = Math.sqrt(Math.pow(CLOCK_WIDTH / 2 - coord.x,2) + Math.pow(CLOCK_HEIGHT / 2 - coord.y,2));
+	grd_second = g_cont.createRadialGradient(CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, 10, CLOCK_WIDTH / 2, CLOCK_HEIGHT / 2, r2);;
+	grd_second.addColorStop(.0, 'rgba(0,0,0,0)');
+	grd_second.addColorStop(.3, '#000');
+	grd_second.addColorStop(.8, '#000');
+	grd_second.addColorStop(1, 'rgba(0,0,0,0)');
+	g_cont.strokeStyle = grd_second;*/
+	g_cont.stroke();
+}
+function create_spiral() {
+	var _r = 10;
+	g_cont.lineWidth = 1;
+	g_cont.strokeStyle = "#f5f5f5";
+	
+	var step = 5;
+	for(var i=0,xy;i<=360*2;i+=step) {
+		xy = get_spiral_coord(i,0);
+		if(i==0){
+			g_cont.moveTo(xy.x, xy.y);
+		}
+	//	console.log(a*180/Math.PI % 90);
+		g_cont.lineTo(xy.x, xy.y);
+		g_cont.stroke();
+	}
+}
+function mark_spiral_hour(_hour,_type) {
+	var _r = 10;
+	g_cont.lineWidth = 1;
+	
+	var step = 5;
+	var rx0,rx1;
+	if(_type=='nexus') {
+		g_cont.strokeStyle = "#05f";
+		rx0 = +Math.PI / 1.2;
+		rx1 = 0.2;	
+		g_cont.fillStyle = "#adf";
+	} else if(_type=='pvp') {
+		g_cont.strokeStyle = "#f55";
+		rx0 = -0.2;
+		rx1 = -Math.PI /1.2;
+		g_cont.fillStyle = "#fdd";
+	}
+	var path0=[],
+		path1=[];
+	for(var i=30*_hour,x0,y0,x1,y2,coord1,coord2;i<=30*(1+_hour);i+=step) {
+		coord1 = get_spiral_coord(i,rx0);
+		coord2 = get_spiral_coord(i,rx1);
+		path0.push(coord1);
+		path1.push(coord2);
+	}
+	g_cont.beginPath();
+	for(var i=0;i<path0.length;i++) {
+		g_cont.lineTo(path0[i].x,path0[i].y);
+	}
+	for(var i=path1.length-1;i>=0;i--) {
+		g_cont.lineTo(path1[i].x,path1[i].y);
+	}
+	g_cont.closePath();
+	//g_cont.stroke();
+	g_cont.fill();
+}
+function clock_tick() {
+	create_clock();
+	draw_spiral_arrow_hour() ;
+	draw_spiral_arrow_second();
+}
+</script>
+</head>
