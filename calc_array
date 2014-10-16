@@ -1,0 +1,49 @@
+<head>
+    <link rel="icon" type="image/x-icon" href="https://assets-cdn.github.com/favicon.ico">
+<head/>
+<body>
+<input type=button value="do it!" onclick="doit()"/></br>
+<textarea id="txa" cols=80 rows=20>1 1 1 2 2 2 3 3 3 0 0 0
+1 2 3 4 5
+10 10 11 11 </textarea>
+<br /><textarea id="txaout" cols=80 rows=20> 43</textarea>
+<script>
+var d=document;
+var N = parseInt;
+function doit() {
+	var data_in = d.getElementById("txa").value;
+	console.log(data_in )
+	var lines, subdiv, result,subres;
+	result = [];
+	lines = data_in.split(/[\r\n]+/);
+
+	for(var i=0,nums,prev_sum=0,t;i<lines.length;i++) {
+		nums = lines[i].trim().split(/ +/);
+		
+		if(nums.length==1) {
+			result.push(N(nums[0]));
+			continue;
+		}
+		subres = [];
+		prev_sum = N(nums[0]) + N(nums[1]);
+		subres.push(prev_sum);
+
+		for(j=1;j<nums.length;j++) {
+			t = N(nums[j]);
+			//console.log(t,nums[j]);
+			if((t+"")=="NaN"){
+				subres.push("##");
+				continue;
+			}
+			subres.push(prev_sum + t);
+			prev_sum += t;
+		}
+
+		result.push(subres.join(" "));
+
+	}
+	d.getElementById("txaout").innerText = result.join("\r\n");
+}
+
+</script>
+</body>
